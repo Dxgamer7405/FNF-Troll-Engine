@@ -1,5 +1,9 @@
 package funkin;
 
+import funkin.data.Level;
+import funkin.data.Song.SongMetadata;
+import haxe.io.Path;
+import funkin.data.Song.SongMetadata as SongData;
 import haxe.io.Bytes;
 import openfl.utils.ByteArray;
 import haxe.ds.StringMap;
@@ -919,6 +923,98 @@ typedef FreeplayCategoryMetadata = {
 		(Defaults are main, side and remix)
 	**/
 	var id:String;
+}
+
+class ContentData 
+{
+	/**
+	 * Content folder id
+	 */
+	public var id:String = "";
+
+	/**
+	 * Content folder path
+	 */
+	public var path:String = "assets";
+
+	/**
+		Content to load before this one.
+	**/
+	public var dependencies:Array<String> = [];
+
+
+	public var songs:Map<String, SongData> = [];
+	public var levels:Map<String, Level> = []; 
+	public var vars:Map<String, Dynamic> = []; // for some not too important values, scripts could store shit here to make up for the lack of static variables
+
+	public function new(id:String, path:String) 
+	{
+		this.id = id;
+		this.path = path;
+
+		scanSongs();
+		scanLevels();
+	}
+
+	public function scanSongs() {
+		this.songs.clear();
+
+		function scanFolderForSongs(path) {
+			Paths.iterateDirectory(path, (name) -> {
+				if (this.songs.exists(name))
+					return;
+
+				var song = new SongData(name, this.id);
+				if (song.charts.length > 0)
+					this.songs.set(name, song);
+			});
+		}
+
+		#if PE_MOD_COMPATIBILITY
+		scanFolderForSongs(Path.join([this.path, "data"]));
+		#end
+		scanFolderForSongs(Path.join([this.path, "songs"]));
+
+		return this.songs;
+	}
+
+	public function scanLevels() {
+		this.levels.clear();
+
+		var folderPath:String = Path.join([this.path, "levels"]);
+		Paths.iterateDirectory(folderPath, function(fileName) {
+			var p = new Path(Path.join([folderPath, fileName]));
+			var id = p.file;
+
+			if (levels.exists(id))
+				return;
+
+			p.ext = null;
+			var basePath:String = p.toString();
+			
+			var jsonPath:String = '$basePath.json';
+			var jsonData:Dynamic = Paths.getJson(jsonPath);
+
+			var scriptPath:Null<String> = null;
+			for (ext in Paths.HSCRIPT_EXTENSIONS) {
+				var path = '$basePath.$ext';
+				if (Paths.exists(path)) {
+					scriptPath = path;
+					break;
+				}
+			}
+			
+			if (jsonData == null && scriptPath == null) {
+				//trace('$basePath: no json or script to register level');
+				return;
+			}
+
+			var level = new Level(this, id, jsonData, scriptPath);
+			this.levels.set(level.id, level);
+		});
+
+		return this.levels;
+	}
 }
 
 typedef ContentMetadata = {
