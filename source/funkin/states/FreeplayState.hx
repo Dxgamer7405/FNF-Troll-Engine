@@ -1,5 +1,7 @@
 package funkin.states;
 
+import funkin.data.FreeplayOption;
+import funkin.objects.hud.HealthIcon;
 import funkin.data.Highscore;
 import funkin.data.Song;
 import funkin.data.Song.SongMetadata;
@@ -10,15 +12,34 @@ import flixel.tweens.FlxEase;
 import flixel.text.FlxText;
 import flixel.group.FlxGroup.FlxTypedGroup;
 
+class FreeplayIcon extends HealthIcon
+{
+	public var tracking:FlxObject = null;
+	public var offX:Float = 0;
+	public var offY:Float = 0;
+
+	override public function update(elapsed:Float)
+	{
+		if (tracking != null){
+			x = tracking.x + offX;
+			y = tracking.y + offY;
+		}
+		super.update(elapsed);
+	}
+}
+
 class FreeplayState extends MusicBeatState
 {
 	public static var comingFromPlayState:Bool = false;
 
 	var menu = new AlphabetMenu();
 	var songMeta:Array<SongMetadata> = [];
+	var options:Array<FreeplayOption> = [];
 
 	var bgGrp = new FlxTypedGroup<FlxSprite>();
 	var bg:FlxSprite;
+
+	var iconGrp = new FlxTypedGroup<FreeplayIcon>();
 
 	var targetHighscore:Float = 0.0;
 	var lerpHighscore:Float = 0.0;
@@ -45,10 +66,35 @@ class FreeplayState extends MusicBeatState
 		funkin.api.Discord.DiscordClient.changePresence('In the menus');
 		#end
 
-		for (modId => content in Paths.contentRegistry) {
-			for (song in content.getFreeplaySongList()) {	
-				menu.addTextOption(song.songName).ID = songMeta.length;
-				songMeta.push(song);
+		for (modId in Paths.modsToLoad) {
+			Paths.currentModDirectory = modId;
+			
+			for (option in Paths.currentContent.getFreeplaySongList()) {	
+				options.push(option);
+				songMeta.push(option.song);
+				
+				var obj = menu.addTextOption(option.song.songName);
+				obj.ID = songMeta.length;
+
+				var minX = obj.x;
+				var maxX = obj.x;
+				var minY = obj.y;
+				var maxY = obj.y;
+				for (obj in obj.lettersArray) {
+					minX = Math.min(minX, obj.x);
+					maxX = Math.max(maxX, obj.x + obj.width);
+					minY = Math.min(minY, obj.y);
+					maxY = Math.max(maxY, obj.y + obj.height);
+				}
+				var width = maxX - minX;
+				var height = maxY - minY;
+				// wtf why isn't alphabet doing this
+
+				var iconSpr = new FreeplayIcon(option.iconId);
+				iconSpr.tracking = obj;
+				iconSpr.offX = width + 15;
+				iconSpr.offY = height / 2 - iconSpr.height / 2;
+				iconGrp.add(iconSpr);
 			}
 		}
 
@@ -59,6 +105,8 @@ class FreeplayState extends MusicBeatState
 		menu.controls = controls;
 		menu.callbacks.onSelect = (selectedIdx, _) -> onSelectSong(songMeta[selectedIdx]);
 		menu.callbacks.onAccept = (_, _) -> onAccept();
+
+		add(iconGrp);
 
 		////
 		var hintBG = CoolUtil.blankSprite(FlxG.width, 26, 0xFF999999);

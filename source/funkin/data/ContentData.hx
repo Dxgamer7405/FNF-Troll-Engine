@@ -70,7 +70,7 @@ class ContentData
 
 	////
 
-	public function getFreeplaySongList():Array<Song> {
+	public function getFreeplaySongList():Array<FreeplayOption> {
 		// TODO: FreeplaySong class
 		// For opponent icons, bg colors, and possibly different bg's per song instead of per mod
 		
@@ -161,8 +161,8 @@ class ContentData
 		return [for (k in map.keys()) k];
 	}
 
-	private var fileFreeplaySongList(get, null):Array<Song> = null;
-	private function get_fileFreeplaySongList():Array<Song> {
+	private var fileFreeplaySongList(get, null):Array<FreeplayOption> = null;
+	private function get_fileFreeplaySongList():Array<FreeplayOption> {
 		if (fileFreeplaySongList != null)
 			return fileFreeplaySongList;
 
@@ -172,20 +172,27 @@ class ContentData
 
 			for (line in rawFile.split('\n')) {
 				var lineSplit = line.rtrim().split(':');
-				var songId = lineSplit[0];	
-				var iconId = lineSplit[1];
-				var bgColor = lineSplit[2];
-				//var bgGraphic = lineSplit[3];
+				var songId:String = lineSplit[0];	
+				var iconId:String = lineSplit[1];
+				var bgColor:Int = Std.parseInt(lineSplit[2]);
+				var bgGraphic = lineSplit[3];
 
 				if (this.songs.exists(songId)) {
-					list.push(this.songs.get(songId));
+					var song = this.songs.get(songId);
+					var option = new FreeplayOption(song);
+
+					option.iconId = iconId ?? "face";
+					option.bgColor = bgColor ?? 0xFFA580FF;
+					option.bgGraphic = bgGraphic ?? "menuDesat";
+
+					list.push(option);
 				}
 			}
 
 			return list;
 		}
 
-		return [for (song in this.songs) song];
+		return [for (song in this.songs) new FreeplayOption(song)];
 	}
 
 	private var fileStoryModeLevelList(get, null):Array<Level> = null;
@@ -244,7 +251,7 @@ class PsychContentData extends ContentData
 		return this.levels;
 	}
 
-	override function get_fileFreeplaySongList():Array<Song> {
+	override function get_fileFreeplaySongList():Array<FreeplayOption> {
 		var list = [];
 
 		for (level in this.levels) {
@@ -256,8 +263,7 @@ class PsychContentData extends ContentData
 			}
 
 			for (song in level.getPlaylist()) {
-				trace(song);
-				list.push(song);
+				list.push(new FreeplayOption(song));
 			}
 		}
 
