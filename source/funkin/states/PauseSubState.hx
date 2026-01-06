@@ -316,6 +316,8 @@ class PauseSubState extends MusicBeatSubstate
 		c.cameras = this.cameras;
 		c.start(0.5);
 		add(c);
+		
+		FlxTween.tween(_bgSprite, {alpha: 0.0}, 0.3, {ease: FlxEase.quartInOut});
 	}
 
 	function restartSong() {
