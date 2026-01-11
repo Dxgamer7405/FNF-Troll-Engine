@@ -1562,12 +1562,11 @@ class PlayState extends MusicBeatState
 		if (sndAsset == null)
 			trace('WARNING: Failed to load track $trackName');
 
-		var newTrack = FlxG.sound.load(sndAsset);
-		//newTrack.volume = 0.0;
+		var newTrack = CoolUtil.makeSound(sndAsset);
+		newTrack.context = MUSIC;
 		newTrack.pitch = playbackRate;
 		newTrack.filter = sndFilter;
 		newTrack.effect = sndEffect;
-		newTrack.context = MUSIC;
 		
 		trackMap.set(trackName, newTrack);
 		tracks.push(newTrack);
@@ -1638,12 +1637,13 @@ class PlayState extends MusicBeatState
 		inst = instTracks[0];
 		vocals = playerTracks[0];
 
-		songLength = 0;
-		for (track in trackMap)
-			songLength = Math.max(songLength, track.length); 
+		songLength = inst.length;
+		inst.onComplete = function() {
+			trace("song ended!?");
+			finishSong(false);
+		};
 
-		hitsound = FlxG.sound.load(Paths.sound("hitsound"));
-		hitsound.exists = true;
+		hitsound = CoolUtil.makeSound(Paths.sound("hitsound"));
 		
 		//// get note types to load
 		var noteTypeMap:Map<String, Bool> = [];
@@ -2447,6 +2447,8 @@ class PlayState extends MusicBeatState
 		FlxTransitionableState.skipNextTransOut = true;
 		persistentUpdate = false;
 		pause();
+
+		// SHIFT + 7 opens the chart editor in the current song position ^^
 
 		if (FlxG.keys.pressed.SHIFT) {
 			var _chartEditor:ChartingStateSession = (SONG:Dynamic)._chartEditor ??= ChartingState.makeSession();

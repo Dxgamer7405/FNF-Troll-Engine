@@ -24,7 +24,19 @@ import openfl.net.FileFilter;
 
 using StringTools;
 
+/**
+	Class for various util functions.  
+	Math function shall go to `CoolMath`
+**/
 class CoolUtil {
+	public static function makeSound(asset:flixel.system.FlxAssets.FlxSoundAsset) {
+		var snd = new FlxSound();
+		snd.loadEmbedded(asset);
+		snd.exists = true;
+		FlxG.sound.list.add(snd);
+		return snd;
+	}
+
 	// TODO: reuse song instances n get rid of this
 	public static function indexOfSong(songList:Array<BaseSong>, song:BaseSong):Int {
 		// return songList.indexOf(song);
@@ -174,14 +186,12 @@ class CoolUtil {
 	@:noCompletion static var _point:FlxPoint = new FlxPoint();
 	public static function overlapsMouse(object:FlxObject, ?camera:FlxCamera):Bool
 	{
-		if (camera == null)
-			camera = FlxG.camera;
+		camera ??= FlxG.camera;
 
-		_point = FlxG.mouse.getPositionInCameraView(camera, _point);
+		FlxG.mouse.getPositionInCameraView(camera, _point);
 		if (camera.containsPoint(_point)) {
-			_point = FlxG.mouse.getWorldPosition(camera, _point);
-			if (object.overlapsPoint(_point, true, camera))
-				return true;
+			FlxG.mouse.getWorldPosition(camera, _point);
+			return object.overlapsPoint(_point, true, camera);
 		}
 
 		return false;
@@ -450,30 +460,30 @@ class CoolUtil {
 	}
 
 	////
-	inline public static function coolLerp(current:Float, target:Float, elapsed:Float):Float
+	@:noCompletion inline public static function coolLerp(current:Float, target:Float, elapsed:Float):Float
 		return CoolMath.coolLerp(current, target, elapsed);
 
-	inline public static function scale(x:Float, lower1:Float, higher1:Float, lower2:Float, higher2:Float):Float
+	@:noCompletion inline public static function scale(x:Float, lower1:Float, higher1:Float, lower2:Float, higher2:Float):Float
 		return CoolMath.scale(x, lower1, higher1, lower2, higher2);
 
-	inline public static function quantizeAlpha(f:Float, interval:Float):Float
+	@:noCompletion inline public static function quantizeAlpha(f:Float, interval:Float):Float
 		return CoolMath.quantizeAlpha(f, interval);
 
-	inline public static function quantize(f:Float, snap:Float):Float
+	@:noCompletion inline public static function quantize(f:Float, snap:Float):Float
 		return CoolMath.quantize(f, snap);
 
-	inline public static function snap(f:Float, snap:Float):Float
+	@:noCompletion inline public static function snap(f:Float, snap:Float):Float
 		return CoolMath.snap(f, snap);
 
-	inline public static function boundTo(value:Float, min:Float, max:Float):Float
+	@:noCompletion inline public static function boundTo(value:Float, min:Float, max:Float):Float
 		return CoolMath.boundTo(value, min, max);
 
-	inline public static function clamp(n:Float, lower:Float, higher:Float):Float
+	@:noCompletion inline public static function clamp(n:Float, lower:Float, higher:Float):Float
 		return CoolMath.clamp(n, lower, higher);
 
-	inline public static function floorDecimal(value:Float, decimals:Int):Float
+	@:noCompletion inline public static function floorDecimal(value:Float, decimals:Int):Float
 		return CoolMath.floorDecimal(value, decimals);
 
-	inline public static function rotate(x:Float, y:Float, rads:Float, ?point:FlxPoint):FlxPoint
+	@:noCompletion inline public static function rotate(x:Float, y:Float, rads:Float, ?point:FlxPoint):FlxPoint
 		return CoolMath.rotate(x, y, rads, point);
 }

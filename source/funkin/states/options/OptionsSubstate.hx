@@ -508,7 +508,7 @@ class OptionsSubstate extends MusicBeatSubstate
 		super();
 	}
 
-	var whitePixel = FlxGraphic.fromRectangle(1, 1, 0xFFFFFFFF, false, 'whitePixel');
+	var whitePixel:FlxGraphic;
 
 	var ignoreVolumeChange:Bool = false;
 	function onVolumeChange(val:Float) {
@@ -526,6 +526,8 @@ class OptionsSubstate extends MusicBeatSubstate
 
 	override function create()
 	{
+		whitePixel = FlxGraphic.fromRectangle(1, 1, 0xFFFFFFFF, false, 'whitePixel');
+
 		//var startTime = Sys.cpuTime();
 		// ClientPrefs.load();
 		persistentDraw = true;
@@ -782,13 +784,17 @@ class OptionsSubstate extends MusicBeatSubstate
 					data.value = (dV);
 
 			case Number:
+				final barBorder:Float = 8;
+
 				var box:FlxSprite = new FlxSprite(whitePixel);
 				box.color = FlxColor.BLACK;
 				box.scale.set(240, 24);
 				box.updateHitbox();
 
-				var bar:FlxSprite = new FlxSprite().makeGraphic(240-8, 24-8);
-				
+				var bar:FlxSprite = new FlxSprite(whitePixel);
+				bar.scale.set(box.width - barBorder, box.height - barBorder);
+				bar.updateHitbox();
+
 				objects.add(box);
 				objects.add(bar);
 
@@ -1006,6 +1012,9 @@ class OptionsSubstate extends MusicBeatSubstate
 				label.y = object.y + ((object.height - label.height) / 2);
 
 			case Number:
+				final barBorder:Float = 8;
+				final barWidth:Float = 240 - barBorder;
+
 				var box:FlxSprite = widget.data.get("box");
 				var bar:FlxSprite = widget.data.get("bar");
 				var text:FlxText = widget.data.get("text");
@@ -1020,7 +1029,7 @@ class OptionsSubstate extends MusicBeatSubstate
 						scrubbingBar = bar;
 						_mousePoint = FlxG.mouse.getWorldPosition(optionCamera, _mousePoint);
 						var localX = _mousePoint.x - box.x;
-						var value = FlxMath.lerp(min, max, localX / bar.frameWidth);
+						var value = FlxMath.lerp(min, max, localX / barWidth);
 						newVal = value;
 					}
 				}
@@ -1034,7 +1043,7 @@ class OptionsSubstate extends MusicBeatSubstate
 
 				var value = widget.optionData.value;
 
-				bar.scale.x = (value - min) / (max - min);
+				bar.scale.x = (box.width - barBorder) * (value - min) / (max - min);
 				bar.updateHitbox();
 
 				box.x = object.x + 600;
