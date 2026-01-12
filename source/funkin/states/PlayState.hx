@@ -653,8 +653,6 @@ class PlayState extends MusicBeatState
 
 		FlxG.cameras.setDefaultDrawTarget(camGame, true);
 
-		this.camera = camGame;
-
 		camFollow = prevCamFollow ?? new FlxPoint();
 		camFollowPos = prevCamFollowPos ?? new FlxObject();
 
