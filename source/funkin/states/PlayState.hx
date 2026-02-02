@@ -247,14 +247,39 @@ class PlayState extends MusicBeatState
 	#end
 
 	////
-	public var worldCombos:Bool = false;
-	public var showRating:Bool = true;
-	public var showCombo:Bool = false;
-	public var showComboNum:Bool = true;
+	public var showJudge:Bool = true;
+	public var showCombo:Bool = true;
+	public var worldCombos(default, set):Bool = false;
 
-	var lastJudge:RatingSprite;
-	var lastCombos:Array<RatingSprite> = [];
+	public var worldComboOffset = FlxPoint.get(-150, 80);
+	public var worldJudgeOffset = FlxPoint.get(-40, -60);
 
+	public var lastJudge(get, never):RatingSprite;
+	public var lastCombo(get, never):Array<RatingSprite>;
+
+	private var defaultComboCameras:Array<FlxCamera> = [];
+
+	function set_worldCombos(v:Bool) {
+		defaultComboCameras[0] = v ? camGame : camHUD;
+		return worldCombos = v;
+	}
+
+	inline function get_lastJudge() return ratingGroup.lastJudge;
+	inline function get_lastCombo() return ratingGroup.lastCombo;
+	
+	#if ALLOW_DEPRECATION
+	@:deprecated("showComboNum is deprecated! use showCombo instead!")
+	@:noCompletion public var showComboNum(get, set):Bool;
+	@:noCompletion inline function get_showComboNum() return showCombo;
+	@:noCompletion inline function set_showComboNum(v) return showCombo = v;
+	
+	@:deprecated("showRating is deprecated! use showJudge instead!")
+	@:noCompletion public var showRating(get, set):Bool;
+	@:noCompletion inline function get_showRating() return showJudge;
+	@:noCompletion inline function set_showRating(v) return showJudge = v;
+	#end
+
+	////
 	public var skipCountdown:Bool = false;
 	public var skipArrowStartTween:Bool = false;
 
@@ -928,13 +953,14 @@ class PlayState extends MusicBeatState
 		moveCameraSection(SONG.notes[0]);
 
 		////
+		worldCombos = worldCombos; // ClientPrefs.worldCombos;
+
 		ratingGroup = new RatingGroup();
-		ratingGroup.cameras = [worldCombos ? camGame : camHUD];
-		lastJudge = ratingGroup.lastJudge;
+		ratingGroup.cameras = defaultComboCameras;
 
 		timingTxt = new FlxText();
 		timingTxt.setFormat(Paths.font("vcr.ttf"), 28, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-		timingTxt.cameras = ratingGroup.cameras;
+		timingTxt.cameras = defaultComboCameras;
 		timingTxt.scrollFactor.set();
 		timingTxt.borderSize = 1.25;
 		
@@ -1934,8 +1960,7 @@ class PlayState extends MusicBeatState
 			comboColor = 0xFFFFFFFF;
 
 		if (!ClientPrefs.simpleJudge) {
-			for (prevCombo in lastCombos)
-				prevCombo.kill();
+			ratingGroup.killLastCombo();
 		}
 
 		hud.alpha = ClientPrefs.hudOpacity;
@@ -2826,7 +2851,7 @@ class PlayState extends MusicBeatState
 		FlxTween.cancelTweensOf(timingTxt);
 		FlxTween.cancelTweensOf(timingTxt.scale);
 		
-		timingTxt.text = '${FlxMath.roundDecimal(hitDiff, 2)}ms';
+		timingTxt.text = FlxMath.roundDecimal(hitDiff, 3) + 'ms';
 		timingTxt.screenCenter();
 		timingTxt.x += ClientPrefs.comboOffset[4];
 		timingTxt.y -= ClientPrefs.comboOffset[5];
@@ -2838,66 +2863,56 @@ class PlayState extends MusicBeatState
 		timingTxt.y -= 8;
 		timingTxt.scale.set(1, 1);
 		
-		var time = (Conductor.stepLength);
-		FlxTween.tween(timingTxt, 
-			{y: timingTxt.y + 8}, 
-			0.1,
-			{onComplete: function(_){
-				if (ClientPrefs.simpleJudge){
-					FlxTween.tween(timingTxt.scale, {x: 0, y: 0}, time, {
-						ease: FlxEase.quadIn,
-						onComplete: (_) -> timingTxt.visible = false,
-						startDelay: time * 8
-					});
-				}else{
-					FlxTween.tween(timingTxt, {alpha: 0}, time, {
-						// ease: FlxEase.circOut,
-						onComplete: (_) -> timingTxt.visible = false,
-						startDelay: time * 8
-					});
-				}
-			}}
-		);
+		function onComplete(_) {
+			if (ClientPrefs.simpleJudge){
+				FlxTween.tween(timingTxt.scale, {x: 0, y: 0}, Conductor.stepLength, {
+					ease: FlxEase.quadIn,
+					onComplete: (_) -> timingTxt.visible = false,
+					startDelay: 8 * Conductor.stepLength
+				});
+			}else{
+				FlxTween.tween(timingTxt, {alpha: 0}, Conductor.stepLength, {
+					// ease: FlxEase.circOut,
+					onComplete: (_) -> timingTxt.visible = false,
+					startDelay: 8 * Conductor.stepLength
+				});
+			}
+		}
+
+		FlxTween.tween(timingTxt, {y: timingTxt.y + 8}, 0.1, {onComplete: onComplete});
 	}
 
 	private function displayJudgment(image:String){
 		var r:Bool = false;
 		if(hudSkinScript!=null && callScript(hudSkinScript, "onDisplayJudgment", [image]) == Globals.Function_Stop)
 			r = true;
-		if(callOnScripts("onDisplayJudgment", [image]) == Globals.Function_Stop)
+		if(callOnScripts("onDisplayJudgment", [image]) == Globals.Function_Stop || r)
 			return;
-
-		if(r)return;
-
-		var spr:RatingSprite;
 		
-		lastJudge = ratingGroup.lastJudge;
-		if (ClientPrefs.simpleJudge && lastJudge != null)
+		if (ClientPrefs.simpleJudge)
 			lastJudge.kill();
 
-		if (worldCombos)
-			spr = ratingGroup.displayJudgment(image, -40, -60);
+		var spr:RatingSprite = if (worldCombos)
+			ratingGroup.displayJudgment(image, worldJudgeOffset.x, worldJudgeOffset.y);
 		else
-			spr = ratingGroup.displayJudgment(image, ClientPrefs.comboOffset[0], -ClientPrefs.comboOffset[1]);
+			ratingGroup.displayJudgment(image, ClientPrefs.comboOffset[0], -ClientPrefs.comboOffset[1]);
 
 		if (ClientPrefs.simpleJudge) {
 			spr.moves = false;
 
-			spr.scale.copyFrom(ratingGroup.judgeTemplate.scale);
-			spr.tween = FlxTween.tween(spr.scale, {x: spr.scale.x, y: spr.scale.y}, 0.1, {
-				ease: FlxEase.quadOut,
-				onComplete: function(tween:FlxTween) {
-					if (!spr.alive)
-						return;
+			function onComplete(_) {
+				if (!spr.alive)
+					return;
 
-					var stepDur = (Conductor.stepLength);
-					spr.tween = FlxTween.tween(spr.scale, {x: 0, y: 0}, stepDur, {
-						startDelay: stepDur * 8,
-						ease: FlxEase.quadIn,
-						onComplete: (tween:FlxTween) -> spr.kill()
-					});
-				}
-			});
+				spr.tween = FlxTween.tween(spr.scale, {x: 0, y: 0}, Conductor.stepLength, {
+					startDelay: 8 * Conductor.stepLength,
+					ease: FlxEase.quadIn,
+					onComplete: _ -> spr.kill()
+				});
+			}
+
+			spr.scale.copyFrom(ratingGroup.judgeTemplate.scale);
+			spr.tween = FlxTween.tween(spr.scale, {x: spr.scale.x, y: spr.scale.y}, 0.1, {ease: FlxEase.quadOut, onComplete: onComplete});
 
 			spr.alpha = 1.0;
 			spr.scale.scale(1.1, 1.1);
@@ -2908,23 +2923,22 @@ class PlayState extends MusicBeatState
 			spr.acceleration.y = 550;
 			spr.velocity.y = -FlxG.random.int(140, 175);
 
+			function onComplete(_) {
+				spr.tween = FlxTween.tween(spr, {alpha: 0.0}, 0.2, {
+					startDelay: Conductor.beatLength,
+					onComplete: _ -> spr.kill()
+				});
+			}
+
 			spr.scale.copyFrom(ratingGroup.judgeTemplate.scale);
-			spr.tween = FlxTween.tween(spr.scale, {x: spr.scale.x, y: spr.scale.y}, 0.1, {
-				ease: FlxEase.backOut, 
-				onComplete: function(twn) {
-					spr.tween = FlxTween.tween(spr, {alpha: 0.0}, 0.2, {
-						startDelay: Conductor.beatLength,
-						onComplete: (_) -> spr.kill()
-					});
-				}
-			});
+			spr.tween = FlxTween.tween(spr.scale, {x: spr.scale.x, y: spr.scale.y}, 0.1, {ease: FlxEase.backOut, onComplete: onComplete});
 
 			spr.alpha = 1.0;
 			spr.scale.scale(0.96, 0.96);
 		}
 
 		spr.color = 0xFFFFFFFF;
-		spr.visible = showRating;
+		spr.visible = showJudge;
 		spr.alpha = ClientPrefs.judgeOpacity;	
 
 		if(hudSkinScript!=null)
@@ -2941,31 +2955,26 @@ class PlayState extends MusicBeatState
 		if (callOnScripts("onDisplayCombo", [combo]) == Globals.Function_Stop || r)
 			return;
 
-		if (combo == null) 
-			combo = stats.combo;
-
 		if (ClientPrefs.simpleJudge) {
-			for (numSpr in lastCombos)
-				numSpr.kill();
-			
+			ratingGroup.killLastCombo();
 			if (combo == 0)
 				return;
 		}else{
 			if (combo > 0 && combo < 10)
 				return;
 		}
-		
-		if (worldCombos)
-			lastCombos = ratingGroup.displayCombo(combo, -150, 80)
-		else
-			lastCombos = ratingGroup.displayCombo(combo, ClientPrefs.comboOffset[2], -ClientPrefs.comboOffset[3]);
-		
+
 		var comboColor = (combo < 0) ? hud.judgeColours.get("miss") : comboColor;
-		
-		for (numSpr in lastCombos)
+
+		if (worldCombos)
+			ratingGroup.displayCombo(combo, worldComboOffset.x, worldComboOffset.y);
+		else
+			ratingGroup.displayCombo(combo, ClientPrefs.comboOffset[2], -ClientPrefs.comboOffset[3]);		
+
+		for (numSpr in lastCombo)
 		{
 			numSpr.color = comboColor;
-			numSpr.visible = showComboNum;
+			numSpr.visible = showCombo;
 
 			numSpr.alpha = ClientPrefs.judgeOpacity;
 
@@ -2973,21 +2982,19 @@ class PlayState extends MusicBeatState
 			{
 				numSpr.moves = false;
 
+				function onComplete(_) {
+					if (!numSpr.alive)
+						return;
+
+					numSpr.tween = FlxTween.tween(numSpr, {alpha: 0.0}, Conductor.stepLength, {
+						startDelay: Math.max(8 * Conductor.stepLength - 0.1, 0.0),
+						ease: FlxEase.quadIn,
+						onComplete: _ -> numSpr.kill()
+					});
+				}
+
 				numSpr.scale.copyFrom(ratingGroup.comboTemplate.scale);
-				numSpr.tween = FlxTween.tween(numSpr.scale, {x: numSpr.scale.x, y: numSpr.scale.y}, 0.2, {
-					ease: FlxEase.circOut,
-					onComplete: function(tween:FlxTween) {
-						if (!numSpr.alive)
-							return;
-	
-						var stepDur = (Conductor.stepLength);
-						numSpr.tween = FlxTween.tween(numSpr, {alpha: 0.0}, stepDur, {
-							startDelay: Math.max((stepDur * 8) - 0.1, 0.0),
-							ease: FlxEase.quadIn,
-							onComplete: (tween:FlxTween) -> numSpr.kill()
-						});
-					}
-				});
+				numSpr.tween = FlxTween.tween(numSpr.scale, {x: numSpr.scale.x, y: numSpr.scale.y}, 0.2, {ease: FlxEase.circOut, onComplete: onComplete});
 
 				numSpr.scale.x *= 1.25;
 				numSpr.updateHitbox();
@@ -3266,8 +3273,7 @@ class PlayState extends MusicBeatState
 	}
 
 	function breakCombo() {
-		while (lastCombos.length > 0)
-			lastCombos.shift().kill();
+		ratingGroup.killLastCombo();
 
 		if (stats.combo > 10 && gf != null && gf.animOffsets.exists('sad')){
 			gf.playAnim('sad');
