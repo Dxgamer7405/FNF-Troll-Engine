@@ -2041,7 +2041,9 @@ class ChartingState extends MusicBeatState
 			inst.volume = (tracks.length == 1) ? 1.0 : 0.6;
 		
 		for (id => track in soundTracksMap) {
-			if (_session.trackVolumes.exists(id))
+			if (track == null)
+				trace('Failed to load track: ' + id);
+			else if (_session.trackVolumes.exists(id))
 				track.volume = _session.trackVolumes[id];
 			else
 				_session.trackVolumes[id] = track.volume;
