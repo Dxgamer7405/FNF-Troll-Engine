@@ -1,5 +1,6 @@
 package funkin.states.editors;
 
+import funkin.Conductor;
 import funkin.data.SongEventData;
 import funkin.objects.shaders.ColorSwap;
 import funkin.states.base.Prompt;
