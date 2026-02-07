@@ -71,7 +71,48 @@ class PlayField extends FlxTypedGroup<FlxBasic>
 	/** characters that sing when field is hit **/
 	public var characters:Array<Character> = [];
 	/** default character animations to play for each column **/
-	public var singAnimations:Array<String> = ["singLEFT", "singDOWN", "singUP", "singRIGHT"];
+	public var singAnimations:Array<Array<String>> = [
+		["singUP"],
+		["singLEFT", "singRIGHT"],
+		["singLEFT", "singUP", "singRIGHT"],
+		["singLEFT", "singDOWN", "singUP", "singRIGHT"],
+		["singLEFT", "singDOWN", "singUP", "singUP", "singRIGHT"],
+		["singLEFT", "singUP", "singRIGHT", "singLEFT", "singDOWN", "singRIGHT"],
+		["singLEFT", "singUP", "singRIGHT", "singUP", "singLEFT", "singDOWN", "singRIGHT"],
+		[
+			"singLEFT",
+			"singDOWN",
+			"singUP",
+			"singRIGHT",
+			"singLEFT",
+			"singDOWN",
+			"singUP",
+			"singRIGHT"
+		],
+		[
+			"singLEFT",
+			"singDOWN",
+			"singUP",
+			"singRIGHT",
+			"singUP",
+			"singLEFT",
+			"singDOWN",
+			"singUP",
+			"singRIGHT"
+		],
+		[
+			"singLEFT",
+			"singDOWN",
+			"singUP",
+			"singRIGHT",
+			"singDOWN",
+			"singUP",
+			"singLEFT",
+			"singDOWN",
+			"singUP",
+			"singRIGHT"
+		]
+	];
 	
 	/** note renderer **/
 	public var noteField:NoteField;
@@ -327,7 +368,7 @@ class PlayField extends FlxTypedGroup<FlxBasic>
 				strum.alpha = 1;
 		}else {	
 			for (column => strum in strumNotes) {
-				FlxTween.tween(strum, {offsetY: strum.offsetY, alpha: 1}, 1, {ease: FlxEase.circOut, startDelay: 0.5 + Conductor.beatLength * column});
+				FlxTween.tween(strum, {offsetY: strum.offsetY, alpha: 1}, 1, {ease: FlxEase.circOut, startDelay: ((0.5 * 4) / keyCount) + Conductor.beatLength * ((column * 4) / keyCount)});
 				strum.offsetY -= strum.downScroll ? -10 : 10;
 				strum.alpha = 0;
 			}
