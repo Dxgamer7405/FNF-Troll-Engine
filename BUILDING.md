@@ -61,6 +61,53 @@ sudo emerge --ask dev-vcs/git-sh dev-lang/haxe media-video/vlc
 
 ---
 
+
+## Android (Port)
+
+Além dos requisitos gerais, para compilar Android você precisa de:
+
+- Java JDK 17 (ou superior compatível com a versão do Lime/OpenFL)
+- Android SDK (Platform + Build-Tools)
+- Android NDK (via Android Studio/SDK Manager)
+
+### Passos de setup Android
+
+1. Instale as dependências normais da engine (`setup/unix-haxelibs.sh` ou `setup/windows-haxelibs.bat`).
+2. Rode:
+
+```bash
+haxelib run lime setup android
+```
+
+3. Configure variáveis de ambiente (exemplos):
+
+```bash
+export ANDROID_SDK_ROOT="$HOME/Android/Sdk"
+export ANDROID_NDK_ROOT="$ANDROID_SDK_ROOT/ndk/<versao>"
+export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+```
+
+4. Gere APK de teste:
+
+```bash
+lime test android
+```
+
+5. Para release (assinado), use:
+
+```bash
+lime build android -final
+```
+
+### Observações do port Android
+
+- O build Android usa fullscreen em landscape e resolução dinâmica do dispositivo.
+- Recursos de desktop como Discord RPC e hxvlc ficam desativados no Android automaticamente.
+- Carregamento de mods por filesystem foi mantido, com permissões Android e fallback para versões antigas.
+- Para depuração de crashes nativos, prefira compilar sem `-final` e testar via `adb logcat`.
+
+---
+
 # Building
 
 Open a terminal or command prompt window in the root directory of this repository.
