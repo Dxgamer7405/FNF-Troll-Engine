@@ -105,6 +105,7 @@ lime build android -final
 - Recursos de desktop como Discord RPC e hxvlc ficam desativados no Android automaticamente.
 - Carregamento de mods por filesystem foi mantido, com permissões Android e fallback para versões antigas.
 - Para depuração de crashes nativos, prefira compilar sem `-final` e testar via `adb logcat`.
+- Controles por toque foram integrados na engine (gameplay 4K + navegação de menus com botões virtuais por regiões da tela).
 
 ---
 

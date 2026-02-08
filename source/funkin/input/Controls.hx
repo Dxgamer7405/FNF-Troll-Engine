@@ -176,6 +176,73 @@ class Controls {
 	}
 
 	public inline function get(id:String, state:FlxInputState):Bool {
-		return checkKey(id, state) || checkButton(id, state);
+		return checkKey(id, state) || checkButton(id, state) || checkTouch(id, state);
+	}
+
+	private inline function touchStatus(touch:Dynamic, state:FlxInputState):Bool {
+		return switch (state) {
+			case JUST_PRESSED: touch.justPressed;
+			case JUST_RELEASED: touch.justReleased;
+			default: touch.pressed;
+		};
+	}
+
+	private inline function touchInBounds(touch:Dynamic, x:Float, y:Float, w:Float, h:Float):Bool {
+		var px = touch.screenX;
+		var py = touch.screenY;
+		return px >= x && px <= x + w && py >= y && py <= y + h;
+	}
+
+	private inline function isGameplayState():Bool {
+		return Type.getClassName(Type.getClass(FlxG.state)) == "funkin.states.PlayState";
+	}
+
+	public function checkTouch(id:String, state:FlxInputState):Bool {
+		#if mobile
+		if (FlxG.touches == null || FlxG.touches.list == null || FlxG.touches.list.length <= 0)
+			return false;
+
+		var w = FlxG.width;
+		var h = FlxG.height;
+		var gameplay = isGameplayState();
+
+		for (touch in FlxG.touches.list) {
+			if (!touchStatus(touch, state))
+				continue;
+
+			if (gameplay) {
+				// 4K lane buttons in the lower half of the screen
+				var laneH = h * 0.45;
+				var laneY = h - laneH;
+				var laneW = w / 4;
+
+				if (id == "note_left" && touchInBounds(touch, 0, laneY, laneW, laneH)) return true;
+				if (id == "note_down" && touchInBounds(touch, laneW, laneY, laneW, laneH)) return true;
+				if (id == "note_up" && touchInBounds(touch, laneW * 2, laneY, laneW, laneH)) return true;
+				if (id == "note_right" && touchInBounds(touch, laneW * 3, laneY, laneW, laneH)) return true;
+
+				// Pause button in top-right corner
+				if (id == "pause" && touchInBounds(touch, w * 0.84, 0, w * 0.16, h * 0.16)) return true;
+			} else {
+				// Menu layout: D-Pad on left half + accept/back on right side
+				var dpadX = 0.04 * w;
+				var dpadY = 0.5 * h;
+				var dpadW = 0.42 * w;
+				var dpadH = 0.46 * h;
+				var centerX = dpadX + dpadW * 0.5;
+				var centerY = dpadY + dpadH * 0.5;
+
+				if ((id == "ui_left" || id == "note_left") && touchInBounds(touch, dpadX, centerY - dpadH * 0.2, dpadW * 0.45, dpadH * 0.4)) return true;
+				if ((id == "ui_right" || id == "note_right") && touchInBounds(touch, centerX + dpadW * 0.05, centerY - dpadH * 0.2, dpadW * 0.45, dpadH * 0.4)) return true;
+				if ((id == "ui_up" || id == "note_up") && touchInBounds(touch, centerX - dpadW * 0.2, dpadY, dpadW * 0.4, dpadH * 0.45)) return true;
+				if ((id == "ui_down" || id == "note_down") && touchInBounds(touch, centerX - dpadW * 0.2, centerY + dpadH * 0.05, dpadW * 0.4, dpadH * 0.45)) return true;
+
+				if (id == "accept" && touchInBounds(touch, w * 0.68, h * 0.62, w * 0.28, h * 0.32)) return true;
+				if (id == "back" && touchInBounds(touch, w * 0.68, h * 0.28, w * 0.28, h * 0.26)) return true;
+			}
+		}
+		#end
+
+		return false;
 	}
 }
