@@ -13,3 +13,5 @@ haxelib --always --quiet install flxanimate 3.0.4
 haxelib --always --quiet git funkin.vis https://github.com/FunkinCrew/funkVis
 haxelib --always --quiet git grig.audio https://github.com/FunkinCrew/grig.audio refactor/fft-cam-version
 haxelib --always --quiet git linc_filedialogs https://github.com/swordcube/linc_filedialogs
+# Android-friendly playback fallback (disable hxvlc on mobile, use OpenFL video backend when available)
+haxelib --always --quiet install openfl-webm

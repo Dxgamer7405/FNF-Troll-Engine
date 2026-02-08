@@ -23,9 +23,9 @@
 
 	<define name="USE_EPIC_JUDGEMENT" />
 	<define name="HSCRIPT_ALLOWED" />
-	<define name="VIDEOS_ALLOWED" if="cpp" />
+	<define name="VIDEOS_ALLOWED" if="desktop cpp" />
 	<define name="FILESYSTEM_ALLOWED" if="native || desktop"/>
-	<define name="MODS_ALLOWED" if="desktop FILESYSTEM_ALLOWED" />
+	<define name="MODS_ALLOWED" if="FILESYSTEM_ALLOWED" />
 	<define name="DISCORD_ALLOWED" if="desktop cpp" unless="display" />
 	<!--I don't recommend turning on MULTICORE_LOADING until we rewrite it to be less crashy -Neb-->
 	<!-- <define name="MULTICORE_LOADING" if="native" /> -->
@@ -81,6 +81,26 @@
 	<icon path="art/icon16.png" size='16' />
 
 	<assets path="art/iconOG.png" rename="icon.png" if="linux" />
+
+	<section if="android">
+		<set name="APP_ANDROID_MIN_SDK_VERSION" value="24" />
+		<set name="APP_ANDROID_TARGET_SDK_VERSION" value="34" />
+
+		<android permission="android.permission.INTERNET" />
+		<android permission="android.permission.ACCESS_NETWORK_STATE" />
+		<android permission="android.permission.WAKE_LOCK" />
+		<android permission="android.permission.VIBRATE" />
+		<android permission="android.permission.FOREGROUND_SERVICE" />
+
+		<!-- Scoped storage permissions for Android 13+ media access. -->
+		<android permission="android.permission.READ_MEDIA_AUDIO" />
+		<android permission="android.permission.READ_MEDIA_IMAGES" />
+		<android permission="android.permission.READ_MEDIA_VIDEO" />
+
+		<!-- Legacy fallback for Android <= 12. -->
+		<android permission="android.permission.READ_EXTERNAL_STORAGE" />
+		<android permission="android.permission.WRITE_EXTERNAL_STORAGE" />
+	</section>
 
 	<section if="desktop">
 		<assets path="alsoft.txt" rename="alsoft.ini" if="windows" />

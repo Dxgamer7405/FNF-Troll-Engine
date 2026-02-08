@@ -16,6 +16,7 @@ Expect bugs, breaking changes and little documentation!!! (You can look at the `
  - Custom hscript implementation (scriptable notetypes, events, stages, characters and song scripts)
  - Scriptable states
  - A lot more!!!
+ - Android build target with mobile-friendly packaging defaults
 
 ## Installation / Requirements:
 
@@ -24,6 +25,8 @@ Expect bugs, breaking changes and little documentation!!! (You can look at the `
 * Troll Engine's specific haxe libraries can be installed with the `haxelibs` files located in the `setup` folder.
 
 * If this is your first time compiling a HaxeFlixel project, refer to the full [build instructions](https://github.com/riconuts/FNF-Troll-Engine/blob/main/BUILDING.md).
+
+* Android port setup and build steps are documented in `BUILDING.md` under the **Android (Port)** section.
 
 ## Engine Credits / Special Thanks
 - [Nebula the Zorua](https://x.com/Nebula_Zorua) - Most engine stuff
